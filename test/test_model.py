@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from model import *
+from src.model import *
 
 today = datetime.today()
 tomorrow = datetime.today() + timedelta(days=1)
