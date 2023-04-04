@@ -2,7 +2,7 @@ from typing import Protocol
 
 from sqlalchemy.orm import Session
 
-from src import model
+from src.domain import model
 
 
 class RepositoryProtocol(Protocol):
