@@ -10,9 +10,9 @@ from src.service_layer import services
 
 class FakeRepository(RepositoryProtocol):
 
-    def __init__(self, batches: List[Batch]) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._batches = set(batches)
+        self._batches = set()
 
     def add(self, batch: model.Batch):
         self._batches.add(batch)
@@ -32,39 +32,37 @@ class FakeSession:
 
 
 def test_returns_allocation():
-    line = OrderLine("orderid", "sku", 2)
-    batch = Batch("ref", "sku", 20, None)
-    repo = FakeRepository([batch])
+    repo = FakeRepository()
+    session = FakeSession()
+    services.add_batch("ref", "sku", 20, None, repo, session)
 
-    result = services.allocate(line=line, repo=repo, session=FakeSession())
+    result = services.allocate("orderid", "sku", 2, repo=repo, session=session)
     assert result == "ref"
 
 
 def test_error_for_invalid_sku():
-    line = OrderLine("orderid", "sku1", 2)
-    batch = Batch("ref", "sku2", 20, None)
-    repo = FakeRepository([batch])
+    repo = FakeRepository()
+    session = FakeSession()
+    services.add_batch("ref", "sku1", 20, None, repo, session)
 
-    with pytest.raises(services.InvalidSku, match=f"Invalid sku {line.sku}"):
-        services.allocate(line=line, repo=repo, session=FakeSession())
-
+    with pytest.raises(services.InvalidSku, match=f"Invalid sku sku"):
+        services.allocate("orderid", "sku2", 2, repo=repo, session=FakeSession())
 
 
 def test_commits():
-    line = OrderLine("orderid", "sku", 2)
-    batch = Batch("ref", "sku", 20, None)
-    repo = FakeRepository([batch])
+    repo = FakeRepository()
+    session = FakeSession()
+    services.add_batch("ref", "sku", 20, None, repo, session)
     session = FakeSession()
 
-    services.allocate(line=line, repo=repo, session=session)
+    services.allocate("orderid", "sku", 2, repo=repo, session=session)
     assert session.committed is True
 
+
 def test_returns_deallocation():
-    line = OrderLine("orderid", "sku", 2)
-    batch = Batch("ref", "sku", 20, None)
-    batch._allocations.add(line)
-    repo = FakeRepository([batch])
-
-    result = services.deallocate(line, repo, FakeSession())
-    assert result == "ref"
-
+    repo = FakeRepository()
+    session = FakeSession()
+    services.add_batch("ref", "sku", 20, None, repo, session)
+    result1 = services.allocate("orderid", "sku", 2, repo=repo, session=session)
+    result2 = services.deallocate("orderid", "sku", 2, repo=repo, session=session)
+    assert result1 == result2

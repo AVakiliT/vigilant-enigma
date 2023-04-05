@@ -72,11 +72,11 @@ def test_prefers_earlier_batches():
     assert late.available_quantity == 100
     assert later.available_quantity == 100
 
-    @pytest.mark.usefixtures()
-    def test_returns_allocated_batch_ref():
-        in_stock_batch = Batch("in-stock-batch", "RETRO-CLOCK", 100, eta=None)
-        shipment_batch = Batch("shipment-batch", "RETRO-CLOCK", 100, eta=today)
-        line = OrderLine("oref", "RETRO-CLOCK", 10)
 
-        batch = allocate(line, [in_stock_batch, shipment_batch])
-        assert batch.reference == "in-stock-batch"
+@pytest.mark.usefixtures()
+def test_returns_allocated_batch_ref():
+    in_stock_batch = Batch("in-stock-batch", "RETRO-CLOCK", 100, eta=None)
+    shipment_batch = Batch("shipment-batch", "RETRO-CLOCK", 100, eta=today)
+    line = OrderLine("oref", "RETRO-CLOCK", 10)
+    batch_ref = allocate(line, [in_stock_batch, shipment_batch])
+    assert batch_ref == "in-stock-batch"
