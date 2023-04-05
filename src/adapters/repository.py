@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Protocol, Iterable, List
 
 from sqlalchemy.orm import Session
 
@@ -10,6 +10,9 @@ class RepositoryProtocol(Protocol):
         pass
 
     def get(self, reference: str) -> model.Batch:
+        pass
+
+    def list(self) -> List[model.Batch]:
         pass
 
 
