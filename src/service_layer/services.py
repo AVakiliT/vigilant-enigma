@@ -1,8 +1,6 @@
 from datetime import date
 from typing import Optional
 
-from sqlalchemy.orm import Session
-
 from src.adapters.repository import RepositoryProtocol
 from src.domain import model
 from src.domain.model import OrderLine

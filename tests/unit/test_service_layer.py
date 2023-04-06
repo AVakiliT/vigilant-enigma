@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from typing import List, Set
 
 import pytest
@@ -66,3 +67,35 @@ def test_returns_deallocation():
     result1 = services.allocate("orderid", "sku", 2, repo=repo, session=session)
     result2 = services.deallocate("orderid", "sku", 2, repo=repo, session=session)
     assert result1 == result2
+
+
+######################
+today = datetime.today()
+tomorrow = datetime.today() + timedelta(days=1)
+next_week = datetime.today() + timedelta(days=7)
+
+
+def test_prefers_current_stock_batches_to_shipments():
+    repo = FakeRepository()
+    session = FakeSession()
+    services.add_batch("in-stock-batch", "sku", 100, None, repo, session)
+    services.add_batch("shipment-batch", "sku", 100, today, repo, session)
+
+    services.allocate("oref", "sku", 10, repo, session)
+    assert repo.get("in-stock-batch").available_quantity == 90
+    assert repo.get("shipment-batch").available_quantity == 100
+
+def test_prefers_earlier_batches():
+    repo = FakeRepository()
+    session = FakeSession()
+    services.add_batch("in-stock-batch", "RETRO-CLOCK", 100, today, repo, session)
+    services.add_batch("shipment-batch-1", "RETRO-CLOCK", 100, tomorrow, repo, session)
+    services.add_batch("shipment-batch-2", "RETRO-CLOCK", 100, next_week, repo, session)
+    services.allocate("oref", "RETRO-CLOCK", 10, repo, session)
+
+    assert repo.get("in-stock-batch",).available_quantity == 90
+    assert repo.get("shipment-batch-1").available_quantity == 100
+    assert repo.get("shipment-batch-2").available_quantity == 100
+
+
+

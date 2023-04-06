@@ -50,33 +50,11 @@ def test_allocation_is_idempotent():
     batch.allocate(line)
     assert batch.available_quantity == 18
 
-
-def test_prefers_current_stock_batches_to_shipments():
-    in_stock_batch = Batch("in-stock-batch", "RETRO-CLOCK", 100, eta=None)
-    shipment_batch = Batch("shipment-batch", "RETRO-CLOCK", 100, eta=today)
-    line = OrderLine("oref", "RETRO-CLOCK", 10)
-
-    allocate(line, [in_stock_batch, shipment_batch])
-    assert in_stock_batch.available_quantity == 90
-    assert shipment_batch.available_quantity == 100
-
-
-def test_prefers_earlier_batches():
-    early = Batch("in-stock-batch", "RETRO-CLOCK", 100, eta=today)
-    late = Batch("shipment-batch", "RETRO-CLOCK", 100, eta=tomorrow)
-    later = Batch("shipment-batch", "RETRO-CLOCK", 100, eta=next_week)
-    line = OrderLine("oref", "RETRO-CLOCK", 10)
-
-    allocate(line, [early, late, later])
-    assert early.available_quantity == 90
-    assert late.available_quantity == 100
-    assert later.available_quantity == 100
-
-
-@pytest.mark.usefixtures()
 def test_returns_allocated_batch_ref():
     in_stock_batch = Batch("in-stock-batch", "RETRO-CLOCK", 100, eta=None)
     shipment_batch = Batch("shipment-batch", "RETRO-CLOCK", 100, eta=today)
     line = OrderLine("oref", "RETRO-CLOCK", 10)
     batch_ref = allocate(line, [in_stock_batch, shipment_batch])
     assert batch_ref == "in-stock-batch"
+
+
