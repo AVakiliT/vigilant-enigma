@@ -74,19 +74,25 @@ class Batch:
         return f"<Batch {self.reference}>"
 
 
-def allocate(line: OrderLine, batches: List[Batch]) -> str:
-    try:
-        batch = next(batch for batch in sorted(batches) if batch.can_allocate(line))
-        batch.allocate(line)
-        return batch.reference
-    except StopIteration:
-        raise OutOfStock(f"out of stock for sku {line.sku}")
+class Product:
+    def __init__(self, sku : str, batches: List[Batch], version_number=0):
+        self.sku = sku
+        self.batches = batches
+        self.version_number = version_number
 
+    def allocate(self, line: OrderLine) -> str:
+        try:
+            batch = next(batch for batch in sorted(self.batches) if batch.can_allocate(line))
+            batch.allocate(line)
+            self.version_number += 1
+            return batch.reference
+        except StopIteration:
+            raise OutOfStock(f"out of stock for sku {line.sku}")
 
-def deallocate(line: OrderLine, batches: List[Batch]) -> str:
-    try:
-        batch = next(batch for batch in batches if batch.is_allocated_to(line))
-        batch.deallocate(line)
-        return batch.reference
-    except StopIteration:
-        raise NotAllocated(f"Not allocated to any batch")
+    def deallocate(self, line: OrderLine) -> str:
+        try:
+            batch = next(batch for batch in self.batches if batch.is_allocated_to(line))
+            batch.deallocate(line)
+            return batch.reference
+        except StopIteration:
+            raise NotAllocated(f"Not allocated to any batch")

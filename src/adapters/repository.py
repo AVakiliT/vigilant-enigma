@@ -5,27 +5,20 @@ from sqlalchemy.orm import Session
 from src.domain import model
 
 
-class RepositoryProtocol(Protocol):
-    def add(self, batch: model.Batch):
+class ProductRepositoryProtocol(Protocol):
+    def add(self, product: model.Product):
         pass
 
-    def get(self, reference: str) -> model.Batch:
-        pass
-
-    def list(self) -> List[model.Batch]:
+    def get(self, sku: str) -> model.Product:
         pass
 
 
-class SqlRepository(RepositoryProtocol):
+class SqlProductRepository(ProductRepositoryProtocol):
     def __init__(self, session: Session):
         self.session = session
 
-    def add(self, batch):
-        self.session.add(batch)
-        # self.session.commit()
+    def add(self, product):
+        self.session.add(product)
 
-    def get(self, reference):
-        return self.session.query(model.Batch).filter_by(reference=reference).one()
-
-    def list(self):
-        return self.session.query(model.Batch).all()
+    def get(self, sku):
+        return self.session.query(model.Product).filter_by(sku=sku).first()

@@ -19,25 +19,29 @@ def add_batch(
         uow: UnitOfWorkProtocol
 ):
     with uow:
-        uow.batches.add(model.Batch(ref, sku, qty, eta))
+        product = uow.products.get(sku)
+        if product is None:
+            product = model.Product(sku, batches=[])
+            uow.products.add(product)
+        product.batches.append(model.Batch(ref, sku, qty, eta))
         uow.commit()
 
 
 def allocate(orderid: str, sku: str, qty: int, uow: UnitOfWorkProtocol) -> str:
     with uow:
-        batches = uow.batches.list()
-        if not is_valid_sku(sku, batches):
+        product = uow.products.get(sku)
+        if product is None:
             raise InvalidSku(f"Invalid sku {sku}")
-        batch_ref = model.allocate(line=OrderLine(orderid, sku, qty), batches=batches)
+        batch_ref = product.allocate(line=OrderLine(orderid, sku, qty))
         uow.commit()
     return batch_ref
 
 
 def deallocate(orderid: str, sku: str, qty: int, uow: UnitOfWorkProtocol) -> str:
     with uow:
-        batches = uow.batches.list()
-        if not is_valid_sku(sku, batches):
+        product = uow.products.get(sku)
+        if product is None:
             raise InvalidSku(f"Invalid sku {sku}")
-        batch_ref = model.deallocate(OrderLine(orderid, sku, qty), batches=batches)
+        batch_ref = product.deallocate(OrderLine(orderid, sku, qty))
         uow.commit()
     return batch_ref

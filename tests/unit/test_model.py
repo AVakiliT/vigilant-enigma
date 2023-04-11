@@ -54,7 +54,8 @@ def test_returns_allocated_batch_ref():
     in_stock_batch = Batch("in-stock-batch", "RETRO-CLOCK", 100, eta=None)
     shipment_batch = Batch("shipment-batch", "RETRO-CLOCK", 100, eta=today)
     line = OrderLine("oref", "RETRO-CLOCK", 10)
-    batch_ref = allocate(line, [in_stock_batch, shipment_batch])
+    product = Product("RETRO-CLOCK", [in_stock_batch, shipment_batch])
+    batch_ref = product.allocate(line)
     assert batch_ref == "in-stock-batch"
 
 

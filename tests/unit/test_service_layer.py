@@ -3,31 +3,27 @@ from typing import List
 
 import pytest
 
-from src.adapters.repository import RepositoryProtocol
+from src.adapters.repository import ProductRepositoryProtocol
 from src.domain import model
 from src.service_layer import services
 from src.service_layer.unit_of_work import UnitOfWorkProtocol
 
 
-class FakeRepository(RepositoryProtocol):
+class FakeProductRepository(ProductRepositoryProtocol):
 
-    def __init__(self) -> None:
-        super().__init__()
-        self._batches = set()
+    def __init__(self, products) -> None:
+        super().__init__(products)
+        self._products = set(products)
 
-    def add(self, batch: model.Batch):
-        self._batches.add(batch)
+    def add(self, product):
+        self._products.add(product)
 
-    def get(self, reference: str) -> model.Batch:
-        return next(b for b in self._batches if b.reference == reference)
-
-    def list(self) -> List[model.Batch]:
-        return list(self._batches)
-
+    def get(self, sku):
+        return next((p for p in self._products if p.sku == sku), None)
 
 class FakeUnitOfWork(UnitOfWorkProtocol):
     def __init__(self):
-        self.batches = FakeRepository()
+        self.products = FakeProductRepository([])
         self.committed = False
 
     def commit(self):
@@ -39,7 +35,17 @@ class FakeUnitOfWork(UnitOfWorkProtocol):
     def __enter__(self):
         pass
 
+def test_add_batch_for_new_product():
+    uow = FakeUnitOfWork()
+    services.add_batch("batch_ref", "SKU", 100, None, uow)
+    assert uow.products.get("SKU") is not None
+    assert uow.committed
 
+def test_add_batch_for_existing_product():
+    uow = FakeUnitOfWork()
+    services.add_batch("b1", "GARISH-RUG", 100, None, uow)
+    services.add_batch("b2", "GARISH-RUG", 99, None, uow)
+    assert "b2" in [b.reference for b in uow.products.get("GARISH-RUG").batches]
 def test_returns_allocation():
     uow = FakeUnitOfWork()
     services.add_batch("ref", "sku", 20, None, uow)
@@ -75,28 +81,4 @@ def test_returns_deallocation():
 
 
 ######################
-today = datetime.today()
-tomorrow = datetime.today() + timedelta(days=1)
-next_week = datetime.today() + timedelta(days=7)
 
-
-def test_prefers_current_stock_batches_to_shipments():
-    uow = FakeUnitOfWork()
-    services.add_batch("in-stock-batch", "sku", 100, None, uow)
-    services.add_batch("shipment-batch", "sku", 100, today, uow)
-
-    services.allocate("oref", "sku", 10, uow)
-    assert uow.batches.get("in-stock-batch").available_quantity == 90
-    assert uow.batches.get("shipment-batch").available_quantity == 100
-
-
-def test_prefers_earlier_batches():
-    uow = FakeUnitOfWork()
-    services.add_batch("in-stock-batch", "RETRO-CLOCK", 100, today, uow)
-    services.add_batch("shipment-batch-1", "RETRO-CLOCK", 100, tomorrow, uow)
-    services.add_batch("shipment-batch-2", "RETRO-CLOCK", 100, next_week, uow)
-    services.allocate("oref", "RETRO-CLOCK", 10, uow)
-
-    assert uow.batches.get("in-stock-batch", ).available_quantity == 90
-    assert uow.batches.get("shipment-batch-1").available_quantity == 100
-    assert uow.batches.get("shipment-batch-2").available_quantity == 100

@@ -8,11 +8,12 @@ from src.adapters import repository
 
 DEFAULT_SESSION_FACTORY = sessionmaker(bind=create_engine(
     config.get_postgres_uri(),
+    isolation_level="REPEATABLE READ"
 ))
 
 
 class UnitOfWorkProtocol(Protocol):
-    batches: repository.RepositoryProtocol
+    products: repository.ProductRepositoryProtocol
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.rollback()
@@ -36,7 +37,7 @@ class SqlUnitOfWork(UnitOfWorkProtocol):
 
     def __enter__(self):
         self.session = self.session_factory()
-        self.batches = repository.SqlRepository(self.session)
+        self.products = repository.SqlProductRepository(self.session)
         # return super.__enter__()
 
     def commit(self):
