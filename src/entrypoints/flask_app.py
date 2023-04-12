@@ -8,7 +8,7 @@ import config
 import src.service_layer.unit_of_work
 from src.adapters import orm, repository
 from src.domain import model
-from src.service_layer import services
+from src.service_layer import handlers
 
 app = Flask(__name__)
 orm.start_mappers()

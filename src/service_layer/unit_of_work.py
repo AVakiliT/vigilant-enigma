@@ -23,15 +23,13 @@ class UnitOfWorkProtocol(Protocol):
     def __enter__(self):
         return self
 
-    def publish_events(self):
+    def collect_new_events(self):
         for product in self.products.seen:
             while product.events:
-                event = product.events.pop()
-                messagebus.handle(event)
+                yield product.events.pop(0)
 
     def commit(self):
         self._commit()
-        self.publish_events()
 
     def rollback(self):
         ...

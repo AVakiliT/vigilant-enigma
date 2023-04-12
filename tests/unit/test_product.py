@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
 from src.domain import events
-from src.service_layer import services
-from tests.unit.test_service_layer import FakeUnitOfWork
+from src.service_layer import handlers
+from tests.unit.test_handlers import FakeUnitOfWork
 
 today = datetime.today()
 tomorrow = datetime.today() + timedelta(days=1)

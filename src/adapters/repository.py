@@ -3,6 +3,7 @@ from typing import Protocol, Iterable, List, Set
 
 from sqlalchemy.orm import Session
 
+from src.adapters import orm
 from src.domain import model
 
 
@@ -20,11 +21,20 @@ class AbstractRepository(abc.ABC):
             self.seen.add(product)
         return product
 
+    def get_by_batchref(self, ref) -> model.Product | None:
+        product = self._get_by_batchref(ref)
+        if product:
+            self.seen.add(product)
+        return product
+
     def _add(self, product: model.Product):
-        ...
+        raise NotImplementedError
 
     def _get(self, sku) -> model.Product:
-        ...
+        raise NotImplementedError
+
+    def _get_by_batchref(self, ref) -> model.Product | None:
+        raise NotImplementedError
 
 
 class SqlProductRepository(AbstractRepository):
@@ -37,6 +47,12 @@ class SqlProductRepository(AbstractRepository):
 
     def _get(self, sku):
         return self.session.query(model.Product).filter_by(sku=sku).first()
+
+    def _get_by_batch_ref(self, ref):
+        return self.session.query(model.Product).join(model.Batch).filter(
+            orm.batches.c.reference == ref
+        ).first()
+
 
 
 # class TrackingRepository(ProductRepositoryProtocol):
