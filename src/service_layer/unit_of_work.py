@@ -1,10 +1,12 @@
-from typing import Protocol
+from typing import Protocol, Set
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import config
 from src.adapters import repository
+from src.domain import model
+from src.service_layer import messagebus
 
 DEFAULT_SESSION_FACTORY = sessionmaker(bind=create_engine(
     config.get_postgres_uri(),
@@ -13,22 +15,32 @@ DEFAULT_SESSION_FACTORY = sessionmaker(bind=create_engine(
 
 
 class UnitOfWorkProtocol(Protocol):
-    products: repository.ProductRepositoryProtocol
+    products: repository.AbstractRepository
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.rollback()
 
     def __enter__(self):
-        raise NotImplementedError
+        return self
+
+    def publish_events(self):
+        for product in self.products.seen:
+            while product.events:
+                event = product.events.pop()
+                messagebus.handle(event)
 
     def commit(self):
-        raise NotImplementedError
+        self._commit()
+        self.publish_events()
 
     def rollback(self):
-        raise NotImplementedError
+        ...
+
+    def _commit(self):
+        ...
 
 
-class SqlUnitOfWork(UnitOfWorkProtocol):
+class SqlAlchemyUnitOfWork(UnitOfWorkProtocol):
     def __init__(self, session_factory=DEFAULT_SESSION_FACTORY) -> None:
         self.session_factory = session_factory
 
@@ -37,10 +49,12 @@ class SqlUnitOfWork(UnitOfWorkProtocol):
 
     def __enter__(self):
         self.session = self.session_factory()
-        self.products = repository.SqlProductRepository(self.session)
-        # return super.__enter__()
+        self.products = repository.SqlProductRepository(
 
-    def commit(self):
+                self.session
+            )
+
+    def _commit(self):
         self.session.commit()
 
     def rollback(self):

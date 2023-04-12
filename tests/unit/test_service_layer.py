@@ -3,16 +3,16 @@ from typing import List
 
 import pytest
 
-from src.adapters.repository import ProductRepositoryProtocol
+from src.adapters.repository import AbstractRepository
 from src.domain import model
 from src.service_layer import services
 from src.service_layer.unit_of_work import UnitOfWorkProtocol
 
 
-class FakeProductRepository(ProductRepositoryProtocol):
+class FakeProductRepository(AbstractRepository):
 
     def __init__(self, products) -> None:
-        super().__init__(products)
+        super().__init__()
         self._products = set(products)
 
     def add(self, product):
@@ -21,19 +21,21 @@ class FakeProductRepository(ProductRepositoryProtocol):
     def get(self, sku):
         return next((p for p in self._products if p.sku == sku), None)
 
+
 class FakeUnitOfWork(UnitOfWorkProtocol):
     def __init__(self):
         self.products = FakeProductRepository([])
         self.committed = False
 
-    def commit(self):
+    def _commit(self):
         self.committed = True
 
     def rollback(self):
         pass
 
     def __enter__(self):
-        pass
+        return self
+
 
 def test_add_batch_for_new_product():
     uow = FakeUnitOfWork()
@@ -41,11 +43,14 @@ def test_add_batch_for_new_product():
     assert uow.products.get("SKU") is not None
     assert uow.committed
 
+
 def test_add_batch_for_existing_product():
     uow = FakeUnitOfWork()
     services.add_batch("b1", "GARISH-RUG", 100, None, uow)
     services.add_batch("b2", "GARISH-RUG", 99, None, uow)
     assert "b2" in [b.reference for b in uow.products.get("GARISH-RUG").batches]
+
+
 def test_returns_allocation():
     uow = FakeUnitOfWork()
     services.add_batch("ref", "sku", 20, None, uow)
@@ -79,6 +84,4 @@ def test_returns_deallocation():
     result2 = services.deallocate("orderid", "sku", 2, uow=uow)
     assert result1 == result2
 
-
 ######################
-

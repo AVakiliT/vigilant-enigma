@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
 
-import pytest
-
-from src.domain.model import OutOfStock
+from src.domain import events
 from src.service_layer import services
 from tests.unit.test_service_layer import FakeUnitOfWork
 
@@ -39,8 +37,10 @@ def test_prefers_earlier_batches():
 def test_raises_out_of_stock_exception_if_cannot_allocate():
     uow = FakeUnitOfWork()
     services.add_batch("batch_ref_1", "sku_1", 10, None, uow)
-    with pytest.raises(OutOfStock):
-        services.allocate("order_id_1", "sku_1", 20, uow)
+    allocation = services.allocate("order_id_1", "sku_1", 20, uow)
+    product = uow.products.get("sku_1")
+    assert product.events[-1] == events.OutOfStock(sku="sku_1")
+    assert allocation is None
 
 
 def test_increments_version_number():

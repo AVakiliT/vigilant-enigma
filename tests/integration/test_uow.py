@@ -36,9 +36,9 @@ def get_allocated_batch_ref(session, orderid, sku):
 
 
 def test_rolls_back_uncommitted_work_by_default(session_factory):
-    uow = unit_of_work.SqlUnitOfWork(session_factory)
+    uow = unit_of_work.SqlAlchemyUnitOfWork(session_factory)
     with uow:
-        insert_batch(uow.session, 'ref', 'sku', 100, None)
+        insert_batch(uow.session, 'ref', 'sku_123123', 100, None)
 
     session = session_factory()
     rows = list(session.execute('SELECT * FROM "batches"'))
@@ -46,7 +46,7 @@ def test_rolls_back_uncommitted_work_by_default(session_factory):
 
 
 def test_rolls_back_on_error(session_factory):
-    uow = unit_of_work.SqlUnitOfWork(session_factory)
+    uow = unit_of_work.SqlAlchemyUnitOfWork(session_factory)
 
     class DummyException(Exception):
         pass
@@ -66,9 +66,9 @@ def test_uow_can_retrieve_a_batch_and_allocate_to_it(session_factory):
     insert_batch(session, 'batch1', 'HIPSTER-WORKBENCH', 100, None)
     session.commit()
 
-    uow = unit_of_work.SqlUnitOfWork(session_factory)
+    uow = unit_of_work.SqlAlchemyUnitOfWork(session_factory)
     with uow:
-        batch = uow.batches.get(reference='batch1')
+        batch = uow.products.get( 'HIPSTER-WORKBENCH').batches[-1]
         line = model.OrderLine('o1', 'HIPSTER-WORKBENCH', 10)
         batch.allocate(line)
         uow.commit()
@@ -80,7 +80,7 @@ def test_uow_can_retrieve_a_batch_and_allocate_to_it(session_factory):
 def try_to_allocate(orderid, sku, exceptions):
     line = model.OrderLine(orderid, sku, 10)
     try:
-        with unit_of_work.SqlUnitOfWork() as uow:
+        with unit_of_work.SqlAlchemyUnitOfWork() as uow:
             product = uow.products.get(sku=sku)
             product.allocate(line)
             time.sleep(0.2)
@@ -122,5 +122,5 @@ def test_concurrent_updates_to_version_are_not_allowed(postgres_session_factory)
         dict(sku=sku),
     )
     assert orders.rowcount == 1
-    with unit_of_work.SqlUnitOfWork() as uow:
+    with unit_of_work.SqlAlchemyUnitOfWork() as uow:
         uow.session.execute("select 1")

@@ -25,7 +25,7 @@ def batch_add_endpoint():
         request.json['sku'],
         request.json['qty'],
         eta,
-        src.service_layer.unit_of_work.SqlUnitOfWork()
+        src.service_layer.unit_of_work.SqlAlchemyUnitOfWork()
     )
     return 'OK', 201
 
@@ -37,7 +37,7 @@ def batch_allocate_endpoint():
             request.json['orderid'],
             request.json['sku'],
             request.json['qty']
-            , src.service_layer.unit_of_work.SqlUnitOfWork())
+            , src.service_layer.unit_of_work.SqlAlchemyUnitOfWork())
     except (model.OutOfStock, services.InvalidSku) as e:
         return jsonify({'message': str(e)}), 400
     return jsonify({'batch_ref': batch_ref}), 201
@@ -50,7 +50,7 @@ def batch_deallocate_endpoint():
             request.json['orderid'],
             request.json['sku'],
             request.json['qty'],
-            src.service_layer.unit_of_work.SqlUnitOfWork())
+            src.service_layer.unit_of_work.SqlAlchemyUnitOfWork())
     except (model.OutOfStock, services.InvalidSku) as e:
         return jsonify({'message': str(e)}), 400
     return jsonify({'batch_ref': batch_ref}), 202
