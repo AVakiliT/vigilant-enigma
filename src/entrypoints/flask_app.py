@@ -6,9 +6,10 @@ from sqlalchemy.orm import sessionmaker
 
 import config
 import src.service_layer.unit_of_work
-from src.adapters import orm, repository
-from src.domain import model
-from src.service_layer import handlers
+from src.adapters import orm
+from src.domain import events
+from src.service_layer import messagebus
+from src.service_layer.handlers import InvalidSku
 
 app = Flask(__name__)
 orm.start_mappers()
@@ -20,11 +21,11 @@ def batch_add_endpoint():
     eta = request.json['eta']
     if eta is not None:
         eta = datetime.fromisoformat(eta).date()
-    services.add_batch(
+    messagebus.handle(events.BatchCreated(
         request.json['ref'],
         request.json['sku'],
         request.json['qty'],
-        eta,
+        eta,),
         src.service_layer.unit_of_work.SqlAlchemyUnitOfWork()
     )
     return 'OK', 201
@@ -33,12 +34,12 @@ def batch_add_endpoint():
 @app.route("/batch/allocate", methods=['POST'])
 def batch_allocate_endpoint():
     try:
-        batch_ref = services.allocate(
+        batch_ref = messagebus.handle(events.AllocationRequired(
             request.json['orderid'],
             request.json['sku'],
-            request.json['qty']
-            , src.service_layer.unit_of_work.SqlAlchemyUnitOfWork())
-    except (model.OutOfStock, services.InvalidSku) as e:
+            request.json['qty'])
+            , src.service_layer.unit_of_work.SqlAlchemyUnitOfWork())[0]
+    except InvalidSku as e:
         return jsonify({'message': str(e)}), 400
     return jsonify({'batch_ref': batch_ref}), 201
 
@@ -46,12 +47,12 @@ def batch_allocate_endpoint():
 @app.route("/batch/deallocate", methods=['POST'])
 def batch_deallocate_endpoint():
     try:
-        batch_ref = services.deallocate(
+        batch_ref = messagebus.handle(events.DeAllocationRequired(
             request.json['orderid'],
             request.json['sku'],
-            request.json['qty'],
-            src.service_layer.unit_of_work.SqlAlchemyUnitOfWork())
-    except (model.OutOfStock, services.InvalidSku) as e:
+            request.json['qty']),
+            src.service_layer.unit_of_work.SqlAlchemyUnitOfWork())[0]
+    except InvalidSku as e:
         return jsonify({'message': str(e)}), 400
     return jsonify({'batch_ref': batch_ref}), 202
 

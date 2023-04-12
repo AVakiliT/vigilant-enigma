@@ -1,12 +1,10 @@
-from typing import Protocol, Set
+from typing import Protocol
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import config
 from src.adapters import repository
-from src.domain import model
-from src.service_layer import messagebus
 
 DEFAULT_SESSION_FACTORY = sessionmaker(bind=create_engine(
     config.get_postgres_uri(),
