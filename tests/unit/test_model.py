@@ -1,7 +1,5 @@
 from datetime import datetime, timedelta
 
-import pytest
-
 from src.domain.model import *
 
 today = datetime.today()

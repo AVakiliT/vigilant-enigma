@@ -1,5 +1,5 @@
 import abc
-from typing import Protocol, Iterable, List, Set
+from typing import Set
 
 from sqlalchemy.orm import Session
 

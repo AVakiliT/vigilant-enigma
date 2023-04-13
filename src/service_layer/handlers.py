@@ -1,3 +1,4 @@
+import src.domain.commands
 from src.domain import model, events
 from src.domain.model import OrderLine
 from src.service_layer.unit_of_work import UnitOfWorkProtocol
@@ -12,7 +13,7 @@ def is_valid_sku(sku, batches):
 
 
 def add_batch(
-        event: events.BatchCreated,
+        event: src.domain.commands.CreateBatch,
         uow: UnitOfWorkProtocol
 ):
     with uow:
@@ -24,7 +25,7 @@ def add_batch(
         uow.commit()
 
 
-def allocate(event: events.AllocationRequired, uow: UnitOfWorkProtocol) -> str:
+def allocate(event: src.domain.commands.Allocate, uow: UnitOfWorkProtocol) -> str:
     with uow:
         product = uow.products.get(event.sku)
         if product is None:
@@ -34,7 +35,7 @@ def allocate(event: events.AllocationRequired, uow: UnitOfWorkProtocol) -> str:
     return batch_ref
 
 
-def deallocate(event: events.DeAllocationRequired, uow: UnitOfWorkProtocol) -> str:
+def deallocate(event: src.domain.commands.DeAllocate, uow: UnitOfWorkProtocol) -> str:
     with uow:
         product = uow.products.get(event.sku)
         if product is None:
@@ -49,7 +50,7 @@ def send_out_of_stock_notification(event: events.OutOfStock, _: UnitOfWorkProtoc
 
 
 def change_batch_quantity(
-       event: events.BatchQuantityChanged, uow: UnitOfWorkProtocol
+       event: src.domain.commands.ChangeBatchQuantity, uow: UnitOfWorkProtocol
 ):
     with uow:
         product = uow.products.get_by_batchref(event.ref)

@@ -5,9 +5,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import config
+import src.domain.commands
 import src.service_layer.unit_of_work
 from src.adapters import orm
-from src.domain import events
 from src.service_layer import messagebus
 from src.service_layer.handlers import InvalidSku
 
@@ -21,7 +21,7 @@ def batch_add_endpoint():
     eta = request.json['eta']
     if eta is not None:
         eta = datetime.fromisoformat(eta).date()
-    messagebus.handle(events.BatchCreated(
+    messagebus.handle(src.domain.commands.CreateBatch(
         request.json['ref'],
         request.json['sku'],
         request.json['qty'],
@@ -34,7 +34,7 @@ def batch_add_endpoint():
 @app.route("/batch/allocate", methods=['POST'])
 def batch_allocate_endpoint():
     try:
-        batch_ref = messagebus.handle(events.AllocationRequired(
+        batch_ref = messagebus.handle(src.domain.commands.Allocate(
             request.json['orderid'],
             request.json['sku'],
             request.json['qty'])
@@ -47,7 +47,7 @@ def batch_allocate_endpoint():
 @app.route("/batch/deallocate", methods=['POST'])
 def batch_deallocate_endpoint():
     try:
-        batch_ref = messagebus.handle(events.DeAllocationRequired(
+        batch_ref = messagebus.handle(src.domain.commands.DeAllocate(
             request.json['orderid'],
             request.json['sku'],
             request.json['qty']),
