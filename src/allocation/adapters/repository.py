@@ -3,8 +3,8 @@ from typing import Set
 
 from sqlalchemy.orm import Session
 
-from src.adapters import orm
-from src.domain import model
+from allocation.adapters import orm
+from allocation.domain import model
 
 
 class AbstractRepository(abc.ABC):

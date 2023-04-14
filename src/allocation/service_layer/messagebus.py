@@ -3,17 +3,17 @@ from typing import Dict, Type, List, Callable
 
 from tenacity import Retrying, stop_after_attempt, wait_exponential, RetryError
 
-import src.domain.commands
-from src.domain import events, commands
-from src.service_layer import unit_of_work, handlers
+import allocation.domain.commands
+from allocation.domain import events, commands
+from allocation.service_layer import handlers, unit_of_work
 
 logger = logging.getLogger(__name__)
 Message = commands.Command | events.Event
 
 COMMAND_HANDLERS: Dict[Type[commands.Command], Callable] = {
-    src.domain.commands.CreateBatch: handlers.add_batch,
-    src.domain.commands.Allocate: handlers.allocate,
-    src.domain.commands.ChangeBatchQuantity: handlers.change_batch_quantity
+    allocation.domain.commands.CreateBatch: handlers.add_batch,
+    allocation.domain.commands.Allocate: handlers.allocate,
+    allocation.domain.commands.ChangeBatchQuantity: handlers.change_batch_quantity
 }
 
 EVENT_HANDLERS: Dict[Type[events.Event], List[Callable]] = {

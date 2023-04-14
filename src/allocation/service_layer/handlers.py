@@ -1,7 +1,7 @@
-import src.domain.commands
-from src.domain import model, events
-from src.domain.model import OrderLine
-from src.service_layer.unit_of_work import UnitOfWorkProtocol
+import allocation.domain.commands
+from allocation.domain import model, events
+from allocation.domain.model import OrderLine
+from allocation.service_layer.unit_of_work import UnitOfWorkProtocol
 
 
 class InvalidSku(Exception):
@@ -13,7 +13,7 @@ def is_valid_sku(sku, batches):
 
 
 def add_batch(
-        event: src.domain.commands.CreateBatch,
+        event: allocation.domain.commands.CreateBatch,
         uow: UnitOfWorkProtocol
 ):
     with uow:
@@ -25,7 +25,7 @@ def add_batch(
         uow.commit()
 
 
-def allocate(event: src.domain.commands.Allocate, uow: UnitOfWorkProtocol) -> str:
+def allocate(event: allocation.domain.commands.Allocate, uow: UnitOfWorkProtocol) -> str:
     with uow:
         product = uow.products.get(event.sku)
         if product is None:
@@ -35,7 +35,7 @@ def allocate(event: src.domain.commands.Allocate, uow: UnitOfWorkProtocol) -> st
     return batch_ref
 
 
-def deallocate(event: src.domain.commands.DeAllocate, uow: UnitOfWorkProtocol) -> str:
+def deallocate(event: allocation.domain.commands.DeAllocate, uow: UnitOfWorkProtocol) -> str:
     with uow:
         product = uow.products.get(event.sku)
         if product is None:
@@ -50,7 +50,7 @@ def send_out_of_stock_notification(event: events.OutOfStock, _: UnitOfWorkProtoc
 
 
 def change_batch_quantity(
-       event: src.domain.commands.ChangeBatchQuantity, uow: UnitOfWorkProtocol
+       event: allocation.domain.commands.ChangeBatchQuantity, uow: UnitOfWorkProtocol
 ):
     with uow:
         product = uow.products.get_by_batchref(event.ref)

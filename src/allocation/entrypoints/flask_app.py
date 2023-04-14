@@ -4,12 +4,12 @@ from flask import request, jsonify, Flask
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import config
-import src.domain.commands
-import src.service_layer.unit_of_work
-from src.adapters import orm
-from src.service_layer import messagebus
-from src.service_layer.handlers import InvalidSku
+from allocation import config
+import allocation.domain.commands
+import allocation.service_layer.unit_of_work
+from allocation.adapters import orm
+from allocation.service_layer import messagebus
+from allocation.service_layer.handlers import InvalidSku
 
 app = Flask(__name__)
 orm.start_mappers()
@@ -21,12 +21,12 @@ def batch_add_endpoint():
     eta = request.json['eta']
     if eta is not None:
         eta = datetime.fromisoformat(eta).date()
-    messagebus.handle(src.domain.commands.CreateBatch(
+    messagebus.handle(allocation.domain.commands.CreateBatch(
         request.json['ref'],
         request.json['sku'],
         request.json['qty'],
         eta,),
-        src.service_layer.unit_of_work.SqlAlchemyUnitOfWork()
+        allocation.service_layer.unit_of_work.SqlAlchemyUnitOfWork()
     )
     return 'OK', 201
 
@@ -34,11 +34,11 @@ def batch_add_endpoint():
 @app.route("/batch/allocate", methods=['POST'])
 def batch_allocate_endpoint():
     try:
-        batch_ref = messagebus.handle(src.domain.commands.Allocate(
+        batch_ref = messagebus.handle(allocation.domain.commands.Allocate(
             request.json['orderid'],
             request.json['sku'],
             request.json['qty'])
-            , src.service_layer.unit_of_work.SqlAlchemyUnitOfWork())[0]
+            , allocation.service_layer.unit_of_work.SqlAlchemyUnitOfWork())[0]
     except InvalidSku as e:
         return jsonify({'message': str(e)}), 400
     return jsonify({'batch_ref': batch_ref}), 201
@@ -47,11 +47,11 @@ def batch_allocate_endpoint():
 @app.route("/batch/deallocate", methods=['POST'])
 def batch_deallocate_endpoint():
     try:
-        batch_ref = messagebus.handle(src.domain.commands.DeAllocate(
+        batch_ref = messagebus.handle(allocation.domain.commands.DeAllocate(
             request.json['orderid'],
             request.json['sku'],
             request.json['qty']),
-            src.service_layer.unit_of_work.SqlAlchemyUnitOfWork())[0]
+            allocation.service_layer.unit_of_work.SqlAlchemyUnitOfWork())[0]
     except InvalidSku as e:
         return jsonify({'message': str(e)}), 400
     return jsonify({'batch_ref': batch_ref}), 202

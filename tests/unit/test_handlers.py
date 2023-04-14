@@ -2,10 +2,10 @@ from datetime import date
 
 import pytest
 
-from src.adapters.repository import AbstractRepository
-from src.domain import commands
-from src.service_layer import messagebus, handlers
-from src.service_layer.unit_of_work import UnitOfWorkProtocol
+from allocation.adapters.repository import AbstractRepository
+from allocation.domain import commands
+from allocation.service_layer import handlers, messagebus
+from allocation.service_layer.unit_of_work import UnitOfWorkProtocol
 
 
 class FakeProductRepository(AbstractRepository):

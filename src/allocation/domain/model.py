@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Optional, List
 
-from src.domain import events, commands
+from allocation.domain import events, commands
 
 
 class NotAllocated(Exception):
