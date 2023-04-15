@@ -18,7 +18,7 @@ products = Table(
     "products",
     metadata,
     Column("sku", String(255), primary_key=True),
-    Column("version_number", Integer, nullable=False, server_defaulkt="0")
+    Column("version_number", Integer, nullable=False, server_default="0")
 )
 
 batches = Table(
@@ -40,7 +40,7 @@ allocations = Table(
 )
 
 
-def start_mappers():
+def start_mappers(engine=None):
     lines_mapper = mapper(
         model.OrderLine, order_lines
     )
@@ -58,8 +58,13 @@ def start_mappers():
             "batches": relationship(batches_mapper)
         }
     )
+    if engine:
+        metadata.create_all(engine)
 
 
 @event.listens_for(model.Product, "load")
 def receive_load(product, _):
     product.events = []
+
+
+
