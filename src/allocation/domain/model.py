@@ -87,6 +87,9 @@ class Product:
             batch = next(batch for batch in sorted(self.batches) if batch.can_allocate(line))
             batch.allocate(line)
             self.version_number += 1
+            self.events.append(events.Allocated(
+                orderid=line.orderid, sku=line.sku, qty=line.qty, batchref=batch.reference
+            ))
             return batch.reference
         except StopIteration:
             self.events.append(events.OutOfStock(line.sku))

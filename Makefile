@@ -4,6 +4,6 @@ down:
 build:
 	docker-compose build
 up:
-	docker-compose up -d app
+	docker-compose up -d api
 test: up
-	docker-compose run --rm --no-deps --entrypoint=pytest app /tests
+	docker-compose run --rm --no-deps --entrypoint=pytest api /tests

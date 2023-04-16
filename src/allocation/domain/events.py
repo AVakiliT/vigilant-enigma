@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 
+@dataclass
 class Event:
     pass
 
@@ -9,4 +10,10 @@ class Event:
 class OutOfStock(Event):
     sku: str
 
+@dataclass
+class Allocated(Event):
+    orderid: str
+    sku: str
+    qty: int
+    batchref: str
 

@@ -14,5 +14,5 @@ COPY tests/ .
 
 WORKDIR src
 
-#ENV FLASK_APP=allocation/entrypoints/flask_app.py
-CMD flask --app allocation.entrypoints.flask_app run --host=0.0.0.0 --port=80
+
+#CMD flask --app allocation.entrypoints.flask_app run --host=0.0.0.0 --port=80
