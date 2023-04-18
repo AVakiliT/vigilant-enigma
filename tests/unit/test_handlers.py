@@ -79,14 +79,6 @@ def test_add_batch_for_existing_product():
     assert "b2" in [b.reference for b in messagebus.uow.products.get("GARISH-RUG").batches]
 
 
-def test_returns_allocation():
-    messagebus = bootstrap_test_app()
-    messagebus.handle(commands.CreateBatch("ref", "sku", 20, None))
-
-    results = messagebus.handle(commands.Allocate("orderid", "sku", 2))
-    assert results[0] == "ref"
-
-
 def test_error_for_invalid_sku():
     messagebus = bootstrap_test_app()
 
@@ -103,14 +95,6 @@ def test_commits():
 
     messagebus.handle(commands.Allocate("orderid", "sku", 2))
     assert messagebus.uow.committed is True
-
-
-def test_returns_deallocation():
-    messagebus = bootstrap_test_app()
-    messagebus.handle(commands.CreateBatch("ref", "sku", 20, None))
-    result1 = messagebus.handle(commands.Allocate("orderid", "sku", 2))[0]
-    result2 = messagebus.handle(commands.Allocate("orderid", "sku", 2))[0]
-    assert result1 == result2
 
 
 ######################

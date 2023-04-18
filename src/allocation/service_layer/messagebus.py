@@ -21,8 +21,7 @@ class MessageBus:
         self.event_handlers = event_handlers
         self.uow = uow
 
-    def handle(self, message: Message):
-        results = []
+    def handle(self, message: Message) -> None:
         self.queue = [message]
         while self.queue:
             message = self.queue.pop(0)
@@ -30,9 +29,7 @@ class MessageBus:
                 case events.Event():
                     self.handle_event(message)
                 case commands.Command():
-                    result = self.handle_command(message)
-                    results.append(result)
-        return results
+                    self.handle_command(message)
 
     def handle_event(self, event: events.Event,
                      ):
@@ -61,9 +58,8 @@ class MessageBus:
         logger.debug("handling command %s", command)
         try:
             handler = self.command_handler[type(command)]
-            result = handler(command)
+            handler(command)
             self.queue.extend(self.uow.collect_new_events())
-            return result
         except Exception:
             logger.exception("Exception handling command %s", command)
             raise

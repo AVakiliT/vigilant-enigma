@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
-from allocation.domain import commands
+from allocation.domain import commands, events
+from allocation.domain.model import Batch, Product, OrderLine
 from test_handlers import bootstrap_test_app
 
 today = datetime.today()
@@ -34,11 +35,12 @@ def test_prefers_earlier_batches():
 
 
 def test_raises_out_of_stock_exception_if_cannot_allocate():
-    messagebus = bootstrap_test_app()
-    messagebus.handle(commands.CreateBatch("batch_ref_1", "sku_1", 10, None))
-    allocation = messagebus.handle(commands.Allocate("order_id_1", "sku_1", 20))[0]
-    # product = messagebus.uow.products.get("sku_1")
-    # assert product.events[-1] == events.OutOfStock(sku="sku_1")
+    batch = Batch("batch1", "SMALL-FORK", 10, eta=today)
+    product = Product(sku="SMALL-FORK", batches=[batch])
+    product.allocate(OrderLine("order1", "SMALL-FORK", 10))
+
+    allocation = product.allocate(OrderLine("order2", "SMALL-FORK", 1))
+    assert product.events[-1] == events.OutOfStock(sku="SMALL-FORK")
     assert allocation is None
 
 
