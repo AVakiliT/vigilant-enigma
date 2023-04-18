@@ -27,6 +27,7 @@ services:
       - DB_HOST=postgres
       - DB_password=mysecretpassword
       - API_HOST=api
+      - REDIS_HOST=redis
     volumes:
       - ./src:/src
       - ./tests:/tests

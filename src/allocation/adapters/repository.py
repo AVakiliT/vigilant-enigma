@@ -48,7 +48,7 @@ class SqlProductRepository(AbstractRepository):
     def _get(self, sku):
         return self.session.query(model.Product).filter_by(sku=sku).first()
 
-    def _get_by_batch_ref(self, ref):
+    def _get_by_batchref(self, ref):
         return self.session.query(model.Product).join(model.Batch).filter(
             orm.batches.c.reference == ref
         ).first()

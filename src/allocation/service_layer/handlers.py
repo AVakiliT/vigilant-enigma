@@ -59,5 +59,5 @@ def change_batch_quantity(
         uow.commit()
 
 
-def publish_allocated_event(event: events.Allocated, _: UnitOfWorkProtocol):
+def publish_allocated_event(event: events.Allocated, uow: UnitOfWorkProtocol = None):
     redis_eventpublisher.publish('line_allocated', event)
