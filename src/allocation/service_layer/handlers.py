@@ -1,6 +1,9 @@
+from typing import Callable, Dict, Type, List
+
+import allocation.domain
 import allocation.domain.commands
-from allocation.adapters import redis_eventpublisher
-from allocation.domain import model, events
+from allocation.adapters import redis_eventpublisher, notifications
+from allocation.domain import model, events, commands
 from allocation.domain.model import OrderLine
 from allocation.service_layer.unit_of_work import UnitOfWorkProtocol
 
@@ -14,40 +17,43 @@ def is_valid_sku(sku, batches):
 
 
 def add_batch(
-        event: allocation.domain.commands.CreateBatch,
+        command: allocation.domain.commands.CreateBatch,
         uow: UnitOfWorkProtocol
 ):
     with uow:
-        product = uow.products.get(event.sku)
+        product = uow.products.get(command.sku)
         if product is None:
-            product = model.Product(event.sku, batches=[])
+            product = model.Product(command.sku, batches=[])
             uow.products.add(product)
-        product.batches.append(model.Batch(event.ref, event.sku, event.qty, event.eta))
+        product.batches.append(model.Batch(command.ref, command.sku, command.qty, command.eta))
         uow.commit()
 
 
-def allocate(event: allocation.domain.commands.Allocate, uow: UnitOfWorkProtocol) -> str:
+def allocate(command: allocation.domain.commands.Allocate, uow: UnitOfWorkProtocol) -> str:
     with uow:
-        product = uow.products.get(event.sku)
+        product = uow.products.get(command.sku)
         if product is None:
-            raise InvalidSku(f"Invalid sku {event.sku}")
-        batch_ref = product.allocate(line=OrderLine(event.orderid, event.sku, event.qty))
+            raise InvalidSku(f"Invalid sku {command.sku}")
+        batch_ref = product.allocate(line=OrderLine(command.orderid, command.sku, command.qty))
         uow.commit()
     return batch_ref
 
 
-def deallocate(event: allocation.domain.commands.DeAllocate, uow: UnitOfWorkProtocol) -> str:
+def deallocate(command: allocation.domain.commands.DeAllocate, uow: UnitOfWorkProtocol) -> str:
     with uow:
-        product = uow.products.get(event.sku)
+        product = uow.products.get(command.sku)
         if product is None:
-            raise InvalidSku(f"Invalid sku {event.sku}")
-        batch_ref = product.deallocate(OrderLine(event.orderid, event.sku, event.qty))
+            raise InvalidSku(f"Invalid sku {command.sku}")
+        batch_ref = product.deallocate(OrderLine(command.orderid, command.sku, command.qty))
         uow.commit()
     return batch_ref
 
 
-def send_out_of_stock_notification(event: events.OutOfStock, _: UnitOfWorkProtocol):
-    print(f"Out of Stock {event.sku}")
+def send_out_of_stock_notification(event: events.OutOfStock, notifications: notifications.AbstractNotifications,):
+    notifications.send(
+        'stock@made.com',
+        f'Out of stock for {event.sku}',
+    )
 
 
 def change_batch_quantity(
@@ -59,5 +65,16 @@ def change_batch_quantity(
         uow.commit()
 
 
-def publish_allocated_event(event: events.Allocated, uow: UnitOfWorkProtocol = None):
+def publish_allocated_event(event: events.Allocated):
     redis_eventpublisher.publish('line_allocated', event)
+
+
+COMMAND_HANDLERS: Dict[Type[commands.Command], Callable] = {
+    allocation.domain.commands.CreateBatch: add_batch,
+    allocation.domain.commands.Allocate: allocate,
+    allocation.domain.commands.ChangeBatchQuantity: change_batch_quantity
+}
+EVENT_HANDLERS: Dict[Type[events.Event], List[Callable]] = {
+    events.OutOfStock: [send_out_of_stock_notification],
+    events.Allocated: [publish_allocated_event]
+}

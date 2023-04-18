@@ -11,8 +11,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, clear_mappers
 from tenacity import retry, stop_after_delay
 
+import bootstrap
 from allocation import config
 from allocation.adapters.orm import metadata, start_mappers
+from allocation.service_layer import unit_of_work
 
 
 @pytest.fixture
@@ -88,3 +90,13 @@ def restart_redis_pubsub():
         ["docker-compose", "restart", "-t", "0", "redis_pubsub"],
         check=True,
     )
+@pytest.fixture
+def sqlite_bus(sqlite_session_factory):
+     bus = bootstrap.bootstrap(
+     start_orm=True,
+     uow=unit_of_work.SqlAlchemyUnitOfWork(sqlite_session_factory),
+     notifications=lambda *args: None,
+     publish=lambda *args: None,
+     )
+     yield bus
+     clear_mappers()

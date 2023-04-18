@@ -48,6 +48,7 @@ def test_allocation_is_idempotent():
     batch.allocate(line)
     assert batch.available_quantity == 18
 
+
 def test_returns_allocated_batch_ref():
     in_stock_batch = Batch("in-stock-batch", "RETRO-CLOCK", 100, eta=None)
     shipment_batch = Batch("shipment-batch", "RETRO-CLOCK", 100, eta=today)
@@ -55,5 +56,3 @@ def test_returns_allocated_batch_ref():
     product = Product("RETRO-CLOCK", [in_stock_batch, shipment_batch])
     batch_ref = product.allocate(line)
     assert batch_ref == "in-stock-batch"
-
-
