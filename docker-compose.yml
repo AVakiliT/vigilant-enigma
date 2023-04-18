@@ -46,9 +46,13 @@ services:
     environment:
       - POSTGRES_USER=allocation
       - POSTGRES_PASSWORD=mysecretpassword
+    ports:
+      - "5432:5432"
 
 
   redis:
     image: redis:alpine
+    ports:
+      - "6379:6379"
 
 

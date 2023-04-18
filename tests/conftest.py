@@ -23,15 +23,16 @@ def in_memory_db():
 
 
 @pytest.fixture
-def session_factory(in_memory_db):
+def sqlite_session_factory(in_memory_db):
     start_mappers(None)
     yield sessionmaker(bind=in_memory_db)
     clear_mappers()
 
 
+
 @pytest.fixture()
-def session(session_factory):
-    return session_factory()
+def session(sqlite_session_factory):
+    return sqlite_session_factory()
 
 
 @retry(stop=stop_after_delay(10))
