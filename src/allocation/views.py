@@ -10,7 +10,7 @@ def allocations(orderid: str, uow: unit_of_work.SqlAlchemyUnitOfWork):
                JOIN order_lines AS o ON o.id = a.orderline_id
                JOIN batches AS b ON b.id = a.batch_id
                WHERE o.orderid = :orderid
-            """ ,
+            """,
             dict(
                 orderid=orderid
             )))

@@ -1,11 +1,29 @@
 from datetime import datetime, timedelta
+from unittest import mock
 
+import pytest
+from sqlalchemy.orm import clear_mappers
+
+import bootstrap
 from allocation import views
 from allocation.domain import commands
+from allocation.service_layer import unit_of_work
 
 today = datetime.today()
 tomorrow = datetime.today() + timedelta(days=1)
 next_week = datetime.today() + timedelta(days=7)
+
+
+@pytest.fixture
+def sqlite_bus(sqlite_session_factory):
+    bus = bootstrap.bootstrap(
+        start_orm=False,
+        uow=unit_of_work.SqlAlchemyUnitOfWork(sqlite_session_factory),
+        notifications=mock.Mock(),
+        publish=lambda *args: None,
+    )
+    yield bus
+    clear_mappers()
 
 
 def test_allocations_view(sqlite_bus):
