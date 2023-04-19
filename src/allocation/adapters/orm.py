@@ -59,7 +59,8 @@ def start_mappers():
         products,
         properties={
             "batches": relationship(batches_mapper),
-        }
+        },
+        version_id_col=products.c.version_number
     )
     # if engine:
     #     mapper_registry.metadata.create_all(engine)
