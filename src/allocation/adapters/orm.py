@@ -1,13 +1,14 @@
 from sqlalchemy import MetaData, Table, Column, Integer, String, Date, ForeignKey, event
-from sqlalchemy.orm import mapper, relationship
+from sqlalchemy.orm import relationship, registry
 
 from allocation.domain import model
 
-metadata = MetaData()
+mapper_registry = registry()
+# metadata = MetaData()
 
 order_lines = Table(
     "order_lines",
-    metadata,
+    mapper_registry.metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("sku", String(255)),
     Column("qty", Integer, nullable=False),
@@ -16,14 +17,14 @@ order_lines = Table(
 
 products = Table(
     "products",
-    metadata,
+    mapper_registry.metadata,
     Column("sku", String(255), primary_key=True),
     Column("version_number", Integer, nullable=False, server_default="0")
 )
 
 batches = Table(
     "batches",
-    metadata,
+    mapper_registry.metadata,
     Column("id", Integer, autoincrement=True, primary_key=True),
     Column("reference", String(255)),
     Column("sku", ForeignKey("products.sku")),
@@ -33,18 +34,18 @@ batches = Table(
 
 allocations = Table(
     "allocations",
-    metadata,
+    mapper_registry.metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("orderline_id", ForeignKey("order_lines.id")),
     Column("batch_id", ForeignKey("batches.id"))
 )
 
 
-def start_mappers(engine=None):
-    lines_mapper = mapper(
+def start_mappers():
+    lines_mapper = mapper_registry.map_imperatively(
         model.OrderLine, order_lines
     )
-    batches_mapper = mapper(
+    batches_mapper = mapper_registry.map_imperatively(
         model.Batch,
         batches,
         properties={
@@ -53,13 +54,15 @@ def start_mappers(engine=None):
             )
         }
     )
-    mapper(
-        model.Product, products, properties={
-            "batches": relationship(batches_mapper)
+    mapper_registry.map_imperatively(
+        model.Product,
+        products,
+        properties={
+            "batches": relationship(batches_mapper),
         }
     )
-    if engine:
-        metadata.create_all(engine)
+    # if engine:
+    #     mapper_registry.metadata.create_all(engine)
 
 
 @event.listens_for(model.Product, "load")
