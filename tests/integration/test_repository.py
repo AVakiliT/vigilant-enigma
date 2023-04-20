@@ -62,3 +62,17 @@ def test_repository_can_retrieve_a_product_with_allocations(session):
     # assert retrieved_product == expected
 
     assert retrieved_product.batches[-1]._allocations == {model.OrderLine("order1", "GENERIC-SOFA", 12)}
+
+
+def test_get_by_batchref(sqlite_session_factory):
+    session = sqlite_session_factory()
+    repo = repository.SqlProductRepository(session)
+    b1 = model.Batch("b1", "sku1", 100, eta=None)
+    b2 = model.Batch("b2", "sku1", 100, eta=None)
+    b3 = model.Batch("b3", sku="sku2", qty=100, eta=None)
+    p1 = model.Product("sku1", batches=[b1, b2])
+    p2 = model.Product("sku2", batches=[b3])
+    repo.add(p1)
+    repo.add(p2)
+    assert repo.get_by_batchref("b2") == p1
+    assert repo.get_by_batchref("b3") == p2

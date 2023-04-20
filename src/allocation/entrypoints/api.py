@@ -39,7 +39,7 @@ def batch_deallocate_endpoint(deallocate: DeAllocate):
 def allocations_view_endpoint(orderid: str):
     result = views.allocations(orderid, bus.uow)
     if not result:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="orderid not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"orderid {orderid} not found")
     return result
 
 
